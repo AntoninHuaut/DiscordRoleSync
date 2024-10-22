@@ -4,6 +4,5 @@ services:
     container_name: discord_role_sync
     restart: unless-stopped
     volumes:
+      - ./storage:/app/storage
       - ./config.yaml:/app/config.yaml
-    ports:
-      - "4000:8080"
