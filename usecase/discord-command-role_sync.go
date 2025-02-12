@@ -1,119 +1,32 @@
 package usecase
 
 import (
-	"DiscordRoleSync/src/domain"
+	domain2 "DiscordRoleSync/domain"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"slices"
 )
 
-type DiscordCommand interface {
-	InitCommands() error
-	GetSession() *discordgo.Session
+type DiscordCommandRoleSync interface {
+	RoleSyncCommandHandler(s *discordgo.Session, i *discordgo.InteractionCreate)
 }
 
-func NewDiscordCommand(config *domain.Config, dcSession *discordgo.Session) DiscordCommand {
-	return &discordCommand{
-		config:    config,
-		dcSession: dcSession,
+func NewDiscordCommandRoleSync(config *domain2.Config) DiscordCommandRoleSync {
+	return &discordCommandRoleSync{
+		config: config,
 	}
 }
 
-type discordCommand struct {
-	config    *domain.Config
-	dcSession *discordgo.Session
+type discordCommandRoleSync struct {
+	config *domain2.Config
 }
 
-func (d *discordCommand) InitCommands() error {
-	d.dcSession.AddHandler(d.roleSyncCommandHandler)
-
-	err := d.unregisterCommands()
-	if err != nil {
-		return err
-	}
-
-	err = d.registerCommands()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *discordCommand) GetSession() *discordgo.Session {
-	return d.dcSession
-}
-
-func (d *discordCommand) unregisterCommands() error {
-	guilds, err := d.dcSession.UserGuilds(200, "", "", false)
-	if err != nil {
-		return err
-	}
-
-	for _, guild := range guilds {
-		applications, err := d.dcSession.ApplicationCommands(d.dcSession.State.User.ID, guild.ID)
-		if err != nil {
-			return err
-		}
-
-		for _, application := range applications {
-			if application.Name != domain.RoleSyncCommandName {
-				continue
-			}
-
-			err := d.dcSession.ApplicationCommandDelete(d.dcSession.State.User.ID, guild.ID, application.ID)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (d *discordCommand) registerCommands() error {
-	guilds, err := d.dcSession.UserGuilds(200, "", "", false)
-	if err != nil {
-		return err
-	}
-
-	for _, guild := range guilds {
-		adminPerm := int64(discordgo.PermissionAdministrator)
-		roleSyncCommand := discordgo.ApplicationCommand{
-			Name:                     domain.RoleSyncCommandName,
-			Type:                     discordgo.ChatApplicationCommand,
-			Description:              "Sync two roles",
-			DefaultMemberPermissions: &adminPerm,
-		}
-
-		roleSyncCommand.Options = []*discordgo.ApplicationCommandOption{{
-			Name:         domain.RoleSyncCommandOptionOrigin,
-			Description:  "It's the role that will be used to retrieve the permissions",
-			Type:         discordgo.ApplicationCommandOptionString,
-			Required:     true,
-			Autocomplete: true,
-		}, {
-			Name:         domain.RoleSyncCommandOptionTarget,
-			Description:  "It's the role that will receive the permissions",
-			Type:         discordgo.ApplicationCommandOptionString,
-			Required:     true,
-			Autocomplete: true,
-		}}
-
-		if _, err := d.dcSession.ApplicationCommandCreate(d.dcSession.State.User.ID, guild.ID, &roleSyncCommand); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (d *discordCommand) roleSyncCommandHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (d *discordCommandRoleSync) RoleSyncCommandHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type == discordgo.InteractionApplicationCommandAutocomplete {
 		roleSyncCommandAutoComplete(s, i)
 		return
-	} else if i.Type != discordgo.InteractionApplicationCommand || i.ApplicationCommandData().Name != domain.RoleSyncCommandName {
+	} else if i.Type != discordgo.InteractionApplicationCommand {
 		return
 	}
 
@@ -126,12 +39,11 @@ func (d *discordCommand) roleSyncCommandHandler(s *discordgo.Session, i *discord
 	targetRoleId := options[1].StringValue()
 
 	isGuildPermissionsUpdated, nbUpdatedChannels, err := syncRolePermissions(s, i.GuildID, originRoleId, targetRoleId)
-	responseMessage := ""
+	responseMessage := "Roles synced successfully"
 	if err != nil {
 		log.Printf("ERROR syncing roles: %v", err)
 		responseMessage = fmt.Sprintf("An error occurred while syncing roles: %v", err)
 	} else {
-		responseMessage = "Roles synced successfully"
 		if isGuildPermissionsUpdated {
 			responseMessage += ", guild permissions updated"
 		}
@@ -166,7 +78,7 @@ func roleSyncCommandAutoComplete(s *discordgo.Session, i *discordgo.InteractionC
 		return
 	}
 
-	if slices.Contains([]string{domain.RoleSyncCommandOptionOrigin, domain.RoleSyncCommandOptionTarget}, focusedOption.Name) {
+	if slices.Contains([]string{domain2.RoleSyncCommandOptionOrigin, domain2.RoleSyncCommandOptionTarget}, focusedOption.Name) {
 		userInput := focusedOption.StringValue()
 
 		guildRoles, err := s.GuildRoles(i.GuildID)

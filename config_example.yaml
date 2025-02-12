@@ -1,2 +1,8 @@
 discord:
   token: ""
+  auto_roles:
+    guild_id:
+      - id: "role_id"
+        name: "RoleWithCondition"
+        condition:
+          age_on_server: "6h"

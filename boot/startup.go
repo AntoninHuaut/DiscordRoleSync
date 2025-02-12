@@ -1,8 +1,8 @@
 package boot
 
 import (
-	"DiscordRoleSync/src/domain"
-	"DiscordRoleSync/src/usecase"
+	"DiscordRoleSync/domain"
+	"DiscordRoleSync/usecase"
 	"io"
 	"log"
 	"os"

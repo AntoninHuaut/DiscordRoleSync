@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DiscordRoleSync/src/boot"
+	"DiscordRoleSync/boot"
 	"log"
 	"os"
 	"os/signal"
