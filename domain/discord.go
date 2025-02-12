@@ -5,6 +5,6 @@ const (
 	RoleSyncCommandOptionOrigin = "origin_role"
 	RoleSyncCommandOptionTarget = "target_role"
 
-	AutoRoleCommandName       = "autorole"
+	AutoRoleCommandName       = "roleauto"
 	AutoRoleCommandOptionRole = "role"
 )

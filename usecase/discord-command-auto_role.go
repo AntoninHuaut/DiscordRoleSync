@@ -48,7 +48,7 @@ func (d *discordCommandAutoRole) AutoRoleCommandHandler(s *discordgo.Session, i 
 
 	respErr := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{Content: responseMessage},
+		Data: &discordgo.InteractionResponseData{Content: responseMessage, Flags: discordgo.MessageFlagsEphemeral},
 	})
 	if respErr != nil {
 		log.Printf("ERROR responding to command: %v", respErr)
